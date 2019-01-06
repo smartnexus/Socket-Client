@@ -1,10 +1,10 @@
+# coding=utf-8
 import select
 import sys
 import os.path
 import socket
 import random
 
-serverIp = sys.argv[1]
 serverPort = 55000
 bindPort = str(random.randint(45000, 55000))
 a = []  # Empty array
@@ -22,15 +22,10 @@ def timeout(c, i, p, t, b, s):
         return c.recv(b)
 
 
-def register():
+def register(server_ip):
     c = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    c.sendto(bindPort, (serverIp, serverPort))
-    timeout(c, serverIp, serverPort, 3, 1024, 0)
-    return c
-
-
-if len(sys.argv) == 2:
-    client = register()
+    c.sendto(bindPort, (server_ip, serverPort))
+    timeout(c, server_ip, serverPort, 3, 1024, 0)
     transfer = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     transfer.bind(('127.0.0.1', int(bindPort)))
     transfer.listen(10)
@@ -41,16 +36,22 @@ if len(sys.argv) == 2:
             tunnel.sendall('ok')
             name, size = data.split(' ')
             content = tunnel.recv(int(size))
-            fileContent = open(name, 'w')
-            fileContent.write(content)
-            fileContent.close()
+            file_Content = open(name, 'w')
+            file_Content.write(content)
+            file_Content.close()
             tunnel.sendall('transfer done')
             tunnel.close()
 
+
+if len(sys.argv) == 2:
+    serverIp = sys.argv[1]
+    register(serverIp)
+
 if len(sys.argv) == 3:
+    serverIp = sys.argv[1]
     filePath = sys.argv[2]
     if not os.path.isfile(filePath):
-        print 'Error. Fichero ' + filePath + 'inexistente'
+        print 'Error. Fichero ' + filePath + ' inexistente'
         sys.exit()
     else:
         client = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -73,7 +74,7 @@ if len(sys.argv) == 3:
                             req.close()
                 except socket.error:
                     print 'Error: no se ha podido connectar con el cliente ' + ip + ' en el puerto ' + port
-        register()
+        register(serverIp)
 
 else:
     print 'Error. Uso: cliente IP [Fichero]'
